@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Training Dashboard</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #ffffff; --bg2: #f7f8fa; --bg3: #eef0f4;
+    --text: #111318; --text2: #5a5f6e; --text3: #9199ab;
+    --border: #e2e5ec; --blue: #185FA5; --green: #3B6D11;
+    --red: #A32D2D; --purple: #3C3489; --teal: #0F6E56;
+    --radius: 10px; --radius-sm: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); max-width: 900px; margin: 0 auto; padding: 1rem 1.25rem 3rem; }
+  .db-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 0 .6rem; border-bottom: 1px solid var(--border); margin-bottom: 1.1rem; flex-wrap: wrap; gap: .5rem; }
+  .db-title { font-size: 18px; font-weight: 600; color: var(--text); }
+  .db-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .mode-tabs { display: flex; gap: 5px; margin-bottom: 1.1rem; flex-wrap: wrap; }
+  .mtab { font-size: 12px; font-weight: 500; padding: 5px 14px; border-radius: 20px; cursor: pointer; border: 1px solid var(--border); background: var(--bg); color: var(--text2); }
+  .mtab.active { background: var(--text); color: var(--bg); border-color: transparent; }
+  .slabel { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text3); margin: 1.1rem 0 .55rem; }
+  .mgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 9px; margin-bottom: .9rem; }
+  .mcard { background: var(--bg2); border-radius: var(--radius-sm); padding: .8rem .9rem; }
+  .mlabel { font-size: 11px; color: var(--text2); margin-bottom: 3px; }
+  .mval { font-size: 20px; font-weight: 600; color: var(--text); }
+  .mdelta { font-size: 11px; margin-top: 2px; }
+  .dup { color: var(--green); } .ddn { color: var(--red); } .deq { color: var(--text3); }
+  .chart-wrap { position: relative; width: 100%; height: 210px; margin-bottom: .9rem; }
+  .xtable { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+  .xtable th { text-align: left; font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text3); padding: 0 7px 6px; border-bottom: 1px solid var(--border); }
+  .xtable th:not(:first-child) { text-align: right; }
+  .xtable td { padding: 6px 7px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .xtable td:not(:first-child) { text-align: right; }
+  .xtable tr:last-child td { border-bottom: none; }
+  .xtable tr:hover td { background: var(--bg2); }
+  .badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+  .bup { background: #EAF3DE; color: var(--green); } .bdn { background: #FCEBEB; color: var(--red); }
+  .beq { background: var(--bg2); color: var(--text2); } .bpr { background: #EEEDFE; color: var(--purple); }
+  .win-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: .8rem 1rem; margin-bottom: .5rem; }
+  .win-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: .5rem; }
+  .win-row { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text2); padding: 4px 0; border-bottom: 1px solid var(--border); }
+  .win-row:last-child { border-bottom: none; }
+  .win-val { font-weight: 500; color: var(--text); }
+  .week-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 9px; margin-bottom: .9rem; }
+  .lrow { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 7px; font-size: 11px; color: var(--text2); }
+  .lsw { width: 9px; height: 9px; border-radius: 2px; display: inline-block; margin-right: 3px; vertical-align: middle; }
+  .filrow { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: .7rem; }
+  .filbtn { font-size: 11px; padding: 3px 11px; border-radius: 20px; cursor: pointer; border: 1px solid var(--border); background: var(--bg); color: var(--text2); }
+  .filbtn.active { background: #dbeafe; color: var(--blue); border-color: #bfdbfe; }
+  .prof-display { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.2rem; margin-bottom: .9rem; }
+  .prof-stat-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .6rem; }
+  .prof-stat { background: var(--bg2); border-radius: var(--radius-sm); padding: .4rem .8rem; font-size: 12px; color: var(--text2); }
+  .prof-stat span { font-weight: 600; color: var(--text); margin-left: 3px; }
+  .goal-pill { display: inline-flex; align-items: center; gap: 4px; background: #dbeafe; color: var(--blue); border-radius: 20px; font-size: 11px; font-weight: 600; padding: 2px 10px; margin-top: .5rem; }
+  .upload-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 2.5rem 1.5rem; text-align: center; cursor: pointer; margin-bottom: .75rem; transition: background .15s; }
+  .upload-zone:hover, .upload-zone.dragover { background: var(--bg2); border-color: var(--blue); }
+  .upload-icon { font-size: 32px; color: var(--text3); margin-bottom: .6rem; }
+  .upload-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: .25rem; }
+  .upload-sub { font-size: 12px; color: var(--text2); margin-bottom: .9rem; }
+  .upload-btn { font-size: 13px; padding: 8px 22px; cursor: pointer; font-weight: 600; background: var(--text); color: var(--bg); border: none; border-radius: var(--radius-sm); }
+  .upload-btn:hover { opacity: .85; }
+  .status-msg { font-size: 12px; margin-top: .65rem; padding: .45rem .9rem; border-radius: var(--radius-sm); display: none; }
+  .sok { background: #EAF3DE; color: var(--green); } .serr { background: #FCEBEB; color: var(--red); }
+  .memory-bar { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: .6rem 1rem; font-size: 12px; color: var(--text2); display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .75rem; flex-wrap: wrap; }
+  .mem-btn { font-size: 12px; padding: 4px 14px; cursor: pointer; font-weight: 600; background: var(--text); color: var(--bg); border: none; border-radius: 20px; white-space: nowrap; }
+  .privacy-note { background: var(--bg2); border-radius: var(--radius-sm); padding: .65rem 1rem; font-size: 12px; color: var(--text2); }
+  .no-data { font-size: 13px; color: var(--text2); padding: .5rem 0; }
+  .upd-btn { font-size: 12px; padding: 5px 14px; cursor: pointer; border: 1px solid var(--border); background: var(--bg); border-radius: 20px; color: var(--text2); }
+  .upd-btn:hover { background: var(--bg2); }
+  .chip { font-size: 11px; background: var(--bg2); color: var(--text2); padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border); display: none; }
+</style>
+</head>
+<body>
+
+<div class="db-header">
+  <div>
+    <div class="db-title" id="header-title">Training Dashboard</div>
+    <div class="db-sub" id="date-range">Upload your Excel file to get started</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+    <span class="chip" id="upload-chip"><i class="ti ti-file-spreadsheet" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i><span id="upload-filename"></span></span>
+    <button class="upd-btn" onclick="showUpload()"><i class="ti ti-refresh" style="font-size:12px;vertical-align:-1px;margin-right:4px"></i>Update data</button>
+  </div>
+</div>
+
+<!-- UPLOAD PANEL -->
+<div id="upload-panel">
+  <div class="memory-bar" id="memory-bar" style="display:none;">
+    <span><i class="ti ti-clock" style="font-size:13px;vertical-align:-2px;margin-right:5px"></i><span id="memory-text"></span></span>
+    <button class="mem-btn" onclick="loadFromMemory()">Load last data</button>
+  </div>
+  <div class="upload-zone" id="drop-zone"
+    onclick="document.getElementById('file-input').click()"
+    ondragover="event.preventDefault();this.classList.add('dragover')"
+    ondragleave="this.classList.remove('dragover')"
+    ondrop="handleDrop(event)">
+    <div class="upload-icon"><i class="ti ti-file-spreadsheet"></i></div>
+    <div class="upload-title">Upload your Training_Dashboard_Data.xlsx</div>
+    <div class="upload-sub">Drag and drop here, or click to browse.<br>Update your Excel first, then upload to refresh the dashboard.</div>
+    <button class="upload-btn" onclick="event.stopPropagation();document.getElementById('file-input').click()">
+      <i class="ti ti-upload" style="font-size:13px;vertical-align:-1px;margin-right:5px"></i>Choose file
+    </button>
+    <div class="status-msg" id="upload-status"></div>
+  </div>
+  <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none" onchange="handleFile(this.files[0])">
+  <div class="privacy-note">
+    <i class="ti ti-shield-check" style="font-size:13px;vertical-align:-2px;margin-right:5px"></i>
+    Your data never leaves your device — everything runs locally in your browser. Your last upload is remembered so it reloads automatically next visit.
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" style="display:none">
+  <div class="mode-tabs">
+    <button class="mtab active" id="tab-profile" onclick="switchMode('profile')"><i class="ti ti-user" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>Profile</button>
+    <button class="mtab" id="tab-weekly" onclick="switchMode('weekly')"><i class="ti ti-layout-dashboard" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>Weekly</button>
+    <button class="mtab" id="tab-resistance" onclick="switchMode('resistance')"><i class="ti ti-barbell" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>Resistance</button>
+    <button class="mtab" id="tab-aerobic" onclick="switchMode('aerobic')"><i class="ti ti-run" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>Aerobic</button>
+    <button class="mtab" id="tab-strength" onclick="switchMode('strength')"><i class="ti ti-trophy" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>Strength</button>
+    <button class="mtab" id="tab-bodyweight" onclick="switchMode('bodyweight')"><i class="ti ti-scale" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>Body Weight</button>
+  </div>
+
+  <div id="profile-view"><div id="prof-card"></div></div>
+
+  <div id="weekly-view" style="display:none">
+    <div class="slabel">this week at a glance</div>
+    <div class="week-grid" id="week-cards"></div>
+    <div class="slabel">resistance — what changed</div><div id="week-resistance"></div>
+    <div class="slabel">aerobic — what changed</div><div id="week-aerobic"></div>
+    <div class="slabel">body weight — this week</div><div id="week-bodyweight"></div>
+  </div>
+
+  <div id="resistance-view" style="display:none">
+    <div class="slabel">session summary</div>
+    <div class="mgrid" id="r-metrics"></div>
+    <div class="slabel">weight lifted over time — select exercise</div>
+    <div class="filrow" id="r-filter-row"></div>
+    <div class="lrow"><span><span class="lsw" style="background:#185FA5;"></span>Weight (lbs)</span></div>
+    <div class="chart-wrap"><canvas id="rChart"></canvas></div>
+    <div class="slabel">latest session — exercise progress</div>
+    <div style="overflow-x:auto"><table class="xtable">
+      <thead><tr><th style="width:30%">Exercise</th><th style="width:12%">Sets</th><th style="width:12%">Reps</th><th style="width:16%">Weight</th><th style="width:14%">vs last</th><th style="width:16%">Change</th></tr></thead>
+      <tbody id="r-tbody"></tbody>
+    </table></div>
+  </div>
+
+  <div id="aerobic-view" style="display:none">
+    <div class="slabel">aerobic summary</div>
+    <div class="mgrid" id="a-metrics"></div>
+    <div class="slabel">duration & distance over time</div>
+    <div class="lrow">
+      <span><span class="lsw" style="background:#1D9E75;"></span>Duration (min)</span>
+      <span><span class="lsw" style="border:1.5px dashed #EF9F27;display:inline-block;background:none;width:9px;height:9px;border-radius:2px;margin-right:3px;vertical-align:middle;"></span>Distance (mi)</span>
+    </div>
+    <div class="chart-wrap"><canvas id="aChart"></canvas></div>
+    <div class="slabel">latest session — activity progress</div>
+    <div style="overflow-x:auto"><table class="xtable">
+      <thead><tr><th style="width:28%">Activity</th><th style="width:14%">Duration</th><th style="width:14%">Distance</th><th style="width:14%">Pace</th><th style="width:12%">Calories</th><th style="width:18%">Change</th></tr></thead>
+      <tbody id="a-tbody"></tbody>
+    </table></div>
+    <p style="font-size:11px;color:var(--text3);margin-top:.6rem;">Pace = duration ÷ distance. Calories from Garmin.</p>
+  </div>
+
+  <div id="strength-view" style="display:none">
+    <div class="slabel">1rm summary</div>
+    <div class="mgrid" id="s-metrics"></div>
+    <div class="slabel">1rm trend — select lift</div>
+    <div class="filrow" id="s-filter-row"></div>
+    <div class="lrow">
+      <span><span class="lsw" style="background:#7F77DD;"></span>Est. 1RM (from sets)</span>
+      <span><span class="lsw" style="background:#D4537E;"></span>Tested 1RM (entered)</span>
+    </div>
+    <div class="chart-wrap" style="height:215px"><canvas id="sChart"></canvas></div>
+    <div class="slabel">all lifts — personal records</div>
+    <div style="overflow-x:auto"><table class="xtable">
+      <thead><tr><th style="width:28%">Lift</th><th style="width:18%">Best est. 1RM</th><th style="width:18%">Tested 1RM</th><th style="width:18%">Latest est.</th><th style="width:18%">Change</th></tr></thead>
+      <tbody id="s-tbody"></tbody>
+    </table></div>
+    <p style="font-size:11px;color:var(--text3);margin-top:.6rem;">Est. 1RM = weight × (1 + reps ÷ 30). Tested 1RM from Strength_Log tab.</p>
+  </div>
+
+  <div id="bodyweight-view" style="display:none">
+    <div class="slabel">body weight summary</div>
+    <div class="mgrid" id="bw-metrics"></div>
+    <div class="slabel">weight trend over time</div>
+    <div class="lrow"><span><span class="lsw" style="background:#0F6E56;"></span>Body weight (lbs)</span></div>
+    <div class="chart-wrap"><canvas id="bwChart"></canvas></div>
+  </div>
+</div>
+
+<script>
+let rData=[],aData=[],sData=[],bwData=[],profileData={};
+let currentMode='profile',selResLift=null,selStrLift=null;
+let rChart=null,aChart=null,sChart=null,bwChart=null;
+const STORAGE_KEY='trainingDashboard_v2';
+
+// ── UPLOAD & MEMORY ──────────────────────────────────────────
+function showUpload(){
+  document.getElementById('upload-panel').style.display='';
+  document.getElementById('dashboard').style.display='none';
+  checkMemory();
+}
+function checkMemory(){
+  try{
+    const saved=localStorage.getItem(STORAGE_KEY);
+    if(!saved)return;
+    const p=JSON.parse(saved);
+    const dt=new Date(p.savedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    document.getElementById('memory-text').textContent=`Last upload: ${p.filename||'your file'} — ${dt}`;
+    document.getElementById('memory-bar').style.display='flex';
+  }catch(e){}
+}
+function loadFromMemory(){
+  try{
+    const p=JSON.parse(localStorage.getItem(STORAGE_KEY));
+    rData=p.rData||[];aData=p.aData||[];sData=p.sData||[];bwData=p.bwData||[];profileData=p.profileData||{};
+    document.getElementById('upload-filename').textContent=p.filename||'saved data';
+    document.getElementById('upload-chip').style.display='';
+    document.getElementById('upload-panel').style.display='none';
+    document.getElementById('dashboard').style.display='';
+    buildDashboard();
+  }catch(e){alert('Could not load saved data. Please upload your Excel file.');}
+}
+function saveToMemory(fn){
+  try{ localStorage.setItem(STORAGE_KEY,JSON.stringify({rData,aData,sData,bwData,profileData,filename:fn,savedAt:new Date().toISOString()})); }catch(e){}
+}
+function handleDrop(e){
+  e.preventDefault();document.getElementById('drop-zone').classList.remove('dragover');
+  if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]);
+}
+function handleFile(file){
+  if(!file)return;
+  const st=document.getElementById('upload-status');
+  st.style.display='block';st.className='status-msg';st.textContent='Reading file…';
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array',cellDates:false});
+      parseWorkbook(wb);
+      saveToMemory(file.name);
+      document.getElementById('upload-filename').textContent=file.name;
+      document.getElementById('upload-chip').style.display='';
+      st.className='status-msg sok';
+      st.textContent='✓ File loaded successfully — dashboard updated!';
+      setTimeout(()=>{
+        document.getElementById('upload-panel').style.display='none';
+        document.getElementById('dashboard').style.display='';
+        buildDashboard();
+      },800);
+    }catch(err){
+      st.className='status-msg serr';
+      st.textContent='Error: '+err.message+'. Make sure you are uploading the correct Excel file.';
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ── PARSING — finds real header row regardless of banner rows ─
+function parseSheet(wb, sheetName) {
+  const ws = wb.Sheets[sheetName];
+  if (!ws) { console.warn('Sheet not found:', sheetName); return []; }
+
+  // Get all rows as raw arrays (no header detection)
+  const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+  // Find the row that contains 'Date' as one of its cells — that's the real header row
+  let headerRowIdx = -1;
+  for (let i = 0; i < raw.length; i++) {
+    if (raw[i].some(cell => String(cell).trim() === 'Date')) {
+      headerRowIdx = i;
+      break;
+    }
+  }
+  if (headerRowIdx === -1) { console.warn('No header row found in', sheetName); return []; }
+
+  const headers = raw[headerRowIdx].map(h => String(h).trim());
+  const dataRows = raw.slice(headerRowIdx + 1);
+
+  return dataRows
+    .filter(row => row.some(cell => cell !== '' && cell !== null && cell !== undefined))
+    .map(row => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = row[i] ?? ''; });
+      return obj;
+    });
+}
+
+function fmtDate(val) {
+  if (val === '' || val === null || val === undefined) return '';
+  // String date like '2025-04-01'
+  if (typeof val === 'string') {
+    const s = val.trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+    return s.slice(0, 10);
+  }
+  // Excel serial number
+  if (typeof val === 'number') {
+    try {
+      const d = XLSX.SSF.parse_date_code(val);
+      return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
+    } catch(e) { return ''; }
+  }
+  // JS Date object
+  if (val instanceof Date) {
+    return val.toISOString().slice(0, 10);
+  }
+  return String(val).slice(0, 10);
+}
+
+function parseWorkbook(wb) {
+  profileData = {};
+  const pws = wb.Sheets['Profile'];
+  if (pws) {
+    const raw = XLSX.utils.sheet_to_json(pws, { header: 1, defval: '' });
+    const find = (label) => {
+      for (const row of raw) {
+        for (let i = 0; i < row.length - 1; i++) {
+          if (String(row[i]).trim().toLowerCase() === label.toLowerCase() && row[i+1] !== '') {
+            return String(row[i+1]).trim();
+          }
+        }
+      }
+      return '';
+    };
+    profileData = {
+      fname: find('First Name'), lname: find('Last Name'),
+      age: find('Age'), sex: find('Sex'),
+      goal: find('Primary Goal'), notes: find('Additional Notes'),
+      heightFt: find('Height (ft)'), heightIn: find('Height (in)'),
+      heightCm: find('Height (cm)'),
+      weightLbs: find('Starting Weight (lbs)'), weightKg: find('Starting Weight (kg)'),
+      units: find('Preferred Units')
+    };
+  }
+
+  const rRows = parseSheet(wb, 'Resistance_Log');
+  rData = rRows.map(r => ({
+    date: fmtDate(r['Date']),
+    exercise: String(r['Exercise'] || '').trim(),
+    sets: +r['Sets'] || 0,
+    reps: +r['Reps'] || 0,
+    weight: +r['Weight (lbs)'] || 0
+  })).filter(r => r.date && r.exercise && r.weight > 0);
+
+  const aRows = parseSheet(wb, 'Aerobic_Log');
+  aData = aRows.map(r => ({
+    date: fmtDate(r['Date']),
+    activity: String(r['Activity'] || '').trim(),
+    duration: +r['Duration (min)'] || 0,
+    distance: +r['Distance (mi)'] || 0,
+    calories: +r['Calories'] || 0
+  })).filter(r => r.date && r.activity && r.duration > 0);
+
+  const sRows = parseSheet(wb, 'Strength_Log');
+  sData = sRows.map(r => ({
+    date: fmtDate(r['Date']),
+    lift: String(r['Lift'] || '').trim(),
+    tested1rm: +r['Tested 1RM (lbs)'] || 0,
+    notes: String(r['Notes'] || '')
+  })).filter(r => r.date && r.lift && r.tested1rm > 0);
+
+  const bRows = parseSheet(wb, 'Bodyweight_Log');
+  bwData = bRows.map(r => ({
+    date: fmtDate(r['Date']),
+    weight: +r['Weight (lbs)'] || 0
+  })).filter(r => r.date && r.weight > 0);
+
+  console.log(`Parsed: ${rData.length} resistance rows, ${aData.length} aerobic rows, ${sData.length} strength rows, ${bwData.length} bodyweight rows`);
+}
+
+// ── HELPERS ──────────────────────────────────────────────────
+function epley(w,r){return r===1?w:Math.round(w*(1+r/30));}
+function getSessions(d){return[...new Set(d.map(r=>r.date))].sort();}
+function getWeek(date){
+  const d=new Date(date+'T12:00:00');
+  const day=d.getDay();
+  const diff=d.getDate()-day+(day===0?-6:1);
+  const m=new Date(d);m.setDate(diff);
+  return m.toISOString().slice(0,10);
+}
+function switchMode(m){
+  currentMode=m;
+  ['profile','weekly','resistance','aerobic','strength','bodyweight'].forEach(v=>{
+    document.getElementById(v+'-view').style.display=v===m?'':'none';
+    document.getElementById('tab-'+v).className='mtab'+(v===m?' active':'');
+  });
+}
+function mc(label,value,delta,dir){
+  const c=document.createElement('div');c.className='mcard';
+  let dh='';
+  if(delta){const cl=dir==='up'?'dup':dir==='dn'?'ddn':'deq';dh=`<div class="mdelta ${cl}">${dir==='up'?'▲':'▼'} ${delta}</div>`;}
+  c.innerHTML=`<div class="mlabel">${label}</div><div class="mval">${value}</div>${dh}`;
+  return c;
+}
+
+// ── BUILD DASHBOARD ──────────────────────────────────────────
+function buildDashboard(){
+  buildProfile();buildWeekly();buildResistance();buildAerobic();buildStrength();buildBodyweight();
+  const all=[...getSessions(rData),...getSessions(aData),...getSessions(sData),...bwData.map(r=>r.date)].sort();
+  if(all.length)document.getElementById('date-range').textContent='Data: '+all[0]+' → '+all[all.length-1];
+  const name=profileData.fname||'Athlete';
+  document.getElementById('header-title').textContent=name+"'s Training Dashboard";
+}
+
+function buildProfile(){
+  const p=profileData;
+  const initials=((p.fname?p.fname[0]:'')+(p.lname?p.lname[0]:'')).toUpperCase()||'?';
+  const goalHtml=p.goal?`<div class="goal-pill">🎯 ${p.goal}</div>`:'';
+  const htDisp=p.heightFt?`${p.heightFt}'${p.heightIn}"${p.heightCm?' ('+p.heightCm+' cm)':''}`:p.heightCm?p.heightCm+' cm':'—';
+  const wtDisp=p.weightLbs?`${p.weightLbs} lbs`:p.weightKg?p.weightKg+' kg':'—';
+  let bmiHtml='';
+  if(p.weightLbs&&p.heightFt){
+    const htIn=(+p.heightFt*12)+(+p.heightIn||0);
+    if(htIn>0){
+      const bmi=((+p.weightLbs/(htIn*htIn))*703).toFixed(1);
+      let cat='',col='';
+      if(bmi<18.5){cat='Underweight';col='#185FA5';}else if(bmi<25){cat='Healthy weight';col='#3B6D11';}else if(bmi<30){cat='Overweight';col='#BA7517';}else{cat='Obese';col='#A32D2D';}
+      bmiHtml=`<div class="prof-stat">BMI<span>${bmi} <span style="color:${col};font-size:11px">${cat}</span></span></div>`;
+    }
+  }
+  const noProfile=!p.fname&&!p.lname;
+  document.getElementById('prof-card').innerHTML=noProfile
+    ?`<div style="background:var(--bg2);border-radius:var(--radius);padding:2rem;text-align:center;color:var(--text2);font-size:13px;">Fill in the Profile sheet in your Excel file to see your profile here.</div>`
+    :`<div class="prof-display">
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <div style="width:72px;height:72px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:var(--blue);flex-shrink:0;">${initials}</div>
+          <div>
+            <div style="font-size:17px;font-weight:700;">${p.fname||''} ${p.lname||''}</div>
+            ${p.age||p.sex?`<div style="font-size:12px;color:var(--text2);margin-top:2px;">${[p.age?p.age+' yrs':'',p.sex].filter(Boolean).join(' · ')}</div>`:''}
+            ${goalHtml}
+          </div>
+        </div>
+        <div class="prof-stat-row">
+          <div class="prof-stat">Height<span>${htDisp}</span></div>
+          <div class="prof-stat">Starting weight<span>${wtDisp}</span></div>
+          ${bmiHtml}
+        </div>
+        ${p.notes?`<div style="margin-top:.6rem;font-size:12px;color:var(--text2);">Notes: ${p.notes}</div>`:''}
+      </div>`;
+}
+
+function buildWeekly(){
+  const rS=getSessions(rData),aS=getSessions(aData);
+  const allD=[...rS,...aS,...bwData.map(r=>r.date)].sort();
+  const wc=document.getElementById('week-cards');wc.innerHTML='';
+  if(!allD.length){wc.innerHTML='<p class="no-data">No data found.</p>';return;}
+  const lws=getWeek(allD[allD.length-1]);
+  const pws=new Date(new Date(lws+'T12:00:00').getTime()-7*86400000).toISOString().slice(0,10);
+  const twr=rS.filter(s=>s>=lws),pwr=rS.filter(s=>s>=pws&&s<lws);
+  const twa=aS.filter(s=>s>=lws),pwa=aS.filter(s=>s>=pws&&s<lws);
+  const twb=bwData.filter(r=>r.date>=lws),pwb=bwData.filter(r=>r.date>=pws&&r.date<lws);
+  const tam=twa.reduce((s,d)=>s+aData.filter(r=>r.date===d).reduce((a,r)=>a+r.duration,0),0);
+  const pam=pwa.reduce((s,d)=>s+aData.filter(r=>r.date===d).reduce((a,r)=>a+r.duration,0),0);
+  const tbw=twb.length?twb[twb.length-1].weight:null;
+  const pbw=pwb.length?pwb[pwb.length-1].weight:null;
+  const bwd=tbw&&pbw?(tbw-pbw).toFixed(1):null;
+  [
+    {label:'Resistance sessions',value:twr.length,note:pwr.length?pwr.length+' last week':null},
+    {label:'Aerobic minutes',value:(tam||0)+' min',note:pam?pam+' min last week':null},
+    {label:'Current weight',value:tbw?tbw+' lbs':'—',note:bwd!==null?(parseFloat(bwd)>0?'+'+bwd+' lbs vs last week':bwd+' lbs vs last week'):null,nd:bwd!==null?(parseFloat(bwd)>0?'up':'dn'):null}
+  ].forEach(c=>{
+    const el=document.createElement('div');el.className='mcard';
+    let nh='';if(c.note){const cl=c.nd==='up'?'dup':c.nd==='dn'?'ddn':'deq';nh=`<div class="mdelta ${cl}">${c.note}</div>`;}
+    el.innerHTML=`<div class="mlabel">${c.label}</div><div class="mval">${c.value}</div>${nh}`;wc.appendChild(el);
+  });
+  function winSection(items,nameKey,msgKey,containerId){
+    const el=document.getElementById(containerId);el.innerHTML='';
+    if(!items.length){el.innerHTML='<p class="no-data">No sessions this week.</p>';return;}
+    const wins=items.filter(i=>i.dir==='up'),same=items.filter(i=>i.dir==='eq'),struggles=items.filter(i=>i.dir==='dn');
+    const card=document.createElement('div');card.className='win-card';let html='';
+    if(wins.length){html+=`<div class="win-title" style="color:var(--green)">▲ Getting better</div>`;wins.forEach(w=>{html+=`<div class="win-row"><span>${w[nameKey]}</span><span class="win-val" style="color:var(--green)">${w[msgKey]}</span></div>`;});}
+    if(same.length){html+=`<div class="win-title" style="margin-top:${wins.length?'.5rem':'0'};color:var(--text2)">= Maintained</div>`;same.forEach(w=>{html+=`<div class="win-row"><span>${w[nameKey]}</span><span class="win-val">${w[msgKey]}</span></div>`;});}
+    if(struggles.length){html+=`<div class="win-title" style="margin-top:${wins.length||same.length?'.5rem':'0'};color:var(--red)">▼ Needs attention</div>`;struggles.forEach(w=>{html+=`<div class="win-row"><span>${w[nameKey]}</span><span class="win-val" style="color:var(--red)">${w[msgKey]}</span></div>`;});}
+    if(!html)html='<p class="no-data">Add a second week of data to compare.</p>';
+    card.innerHTML=html;el.appendChild(card);
+  }
+  const rItems=[...new Set(rData.map(r=>r.exercise))].map(ex=>{
+    const tr2=twr.flatMap(d=>rData.filter(r=>r.date===d&&r.exercise===ex));
+    const pr2=pwr.flatMap(d=>rData.filter(r=>r.date===d&&r.exercise===ex));
+    if(!tr2.length)return null;
+    const tw=Math.max(...tr2.map(r=>r.weight)),pw=pr2.length?Math.max(...pr2.map(r=>r.weight)):null;
+    if(pw===null)return{ex,msg:'First time — '+tw+' lbs',dir:'eq'};
+    if(tw>pw)return{ex,msg:'Lifted heavier: '+pw+'→'+tw+' lbs',dir:'up'};
+    if(tw<pw)return{ex,msg:'Weight dropped: '+pw+'→'+tw+' lbs',dir:'dn'};
+    const tr3=Math.max(...tr2.map(r=>r.reps)),pr3=Math.max(...pr2.map(r=>r.reps));
+    if(tr3>pr3)return{ex,msg:'More reps: '+pr3+'→'+tr3+' @ '+tw+' lbs',dir:'up'};
+    if(tr3<pr3)return{ex,msg:'Fewer reps: '+pr3+'→'+tr3+' @ '+tw+' lbs',dir:'dn'};
+    return{ex,msg:'Maintained '+tw+' lbs × '+tr3+' reps',dir:'eq'};
+  }).filter(Boolean);
+  if(twr.length)winSection(rItems,'ex','msg','week-resistance');
+  else document.getElementById('week-resistance').innerHTML='<p class="no-data">No resistance sessions this week.</p>';
+  const aItems=[...new Set(aData.map(r=>r.activity))].map(act=>{
+    const tr2=twa.flatMap(d=>aData.filter(r=>r.date===d&&r.activity===act));
+    const pr2=pwa.flatMap(d=>aData.filter(r=>r.date===d&&r.activity===act));
+    if(!tr2.length)return null;
+    const td=tr2.reduce((s,r)=>s+r.duration,0),tdi=tr2.reduce((s,r)=>s+r.distance,0);
+    const pd=pr2.reduce((s,r)=>s+r.duration,0),pdi=pr2.reduce((s,r)=>s+r.distance,0);
+    if(!pr2.length)return{act,msg:'First session — '+td+' min / '+tdi.toFixed(1)+' mi',dir:'eq'};
+    if(tdi>pdi)return{act,msg:'Went further: '+pdi.toFixed(1)+'→'+tdi.toFixed(1)+' mi',dir:'up'};
+    if(td>pd&&tdi===pdi)return{act,msg:'Same distance, longer session ('+td+' min)',dir:'up'};
+    if(tdi<pdi)return{act,msg:'Shorter distance: '+pdi.toFixed(1)+'→'+tdi.toFixed(1)+' mi',dir:'dn'};
+    return{act,msg:'Maintained '+tdi.toFixed(1)+' mi in '+td+' min',dir:'eq'};
+  }).filter(Boolean);
+  if(twa.length)winSection(aItems,'act','msg','week-aerobic');
+  else document.getElementById('week-aerobic').innerHTML='<p class="no-data">No aerobic sessions this week.</p>';
+  const wb2=document.getElementById('week-bodyweight');wb2.innerHTML='';
+  if(!twb.length){wb2.innerHTML='<p class="no-data">No body weight entries this week.</p>';}
+  else{
+    const avg=(twb.reduce((s,r)=>s+r.weight,0)/twb.length).toFixed(1);
+    const lo=Math.min(...twb.map(r=>r.weight)),hi=Math.max(...twb.map(r=>r.weight));
+    let bwMsg='';if(bwd!==null){const d=parseFloat(bwd);bwMsg=d<0?`<span style="color:var(--green)">▼ Lost ${Math.abs(d)} lbs vs last week</span>`:d>0?`<span style="color:var(--red)">▲ Gained ${d} lbs vs last week</span>`:`<span style="color:var(--text2)">= No change vs last week</span>`;}
+    const card=document.createElement('div');card.className='win-card';
+    card.innerHTML=`<div class="win-row"><span>Weekly average</span><span class="win-val">${avg} lbs</span></div><div class="win-row"><span>Range this week</span><span class="win-val">${lo} – ${hi} lbs</span></div><div class="win-row"><span>Entries logged</span><span class="win-val">${twb.length}</span></div>${bwd!==null?`<div class="win-row"><span>vs last week</span><span class="win-val">${bwMsg}</span></div>`:''}`;
+    wb2.appendChild(card);
+  }
+}
+
+function buildResistance(){
+  const mg=document.getElementById('r-metrics');mg.innerHTML='';
+  const sessions=getSessions(rData);
+  if(!sessions.length){mg.innerHTML='<p class="no-data">No resistance data found in your Excel file.</p>';return;}
+  const latest=sessions[sessions.length-1],prev=sessions.length>1?sessions[sessions.length-2]:null;
+  const lr=rData.filter(r=>r.date===latest),pr2=prev?rData.filter(r=>r.date===prev):[];
+  const exercises=[...new Set(rData.map(r=>r.exercise))];
+  if(!selResLift||!exercises.includes(selResLift))selResLift=exercises[0];
+  const latestW=lr.length?Math.max(...lr.map(r=>r.weight)):0;
+  const prevW=pr2.length?Math.max(...pr2.map(r=>r.weight)):null;
+  const wDelta=prevW?latestW-prevW:null;
+  [mc('Sessions logged',sessions.length),mc('Exercises tracked',exercises.length),mc('Heaviest lift (latest)',latestW+' lbs',wDelta!==null?(wDelta>0?'+'+wDelta+' lbs':wDelta+' lbs'):null,wDelta>0?'up':wDelta<0?'dn':'eq'),mc('Latest session',latest)].forEach(c=>mg.appendChild(c));
+  const fr=document.getElementById('r-filter-row');fr.innerHTML='';
+  exercises.forEach(ex=>{const btn=document.createElement('button');btn.className='filbtn'+(ex===selResLift?' active':'');btn.textContent=ex;btn.onclick=()=>{selResLift=ex;buildResistance();};fr.appendChild(btn);});
+  const exDates=getSessions(rData.filter(r=>r.exercise===selResLift));
+  const exW=exDates.map(d=>Math.max(...rData.filter(r=>r.date===d&&r.exercise===selResLift).map(r=>r.weight)));
+  if(rChart)rChart.destroy();
+  rChart=new Chart(document.getElementById('rChart'),{type:'line',data:{labels:exDates,datasets:[{label:'Weight',data:exW,borderColor:'#185FA5',backgroundColor:'rgba(24,95,165,0.07)',pointBackgroundColor:'#185FA5',pointRadius:5,fill:true,tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.y+' lbs'}}},scales:{y:{beginAtZero:false,ticks:{callback:v=>v+' lbs'}},x:{ticks:{autoSkip:false,maxRotation:30}}}}});
+  const tbody=document.getElementById('r-tbody');tbody.innerHTML='';
+  exercises.forEach(ex=>{
+    const le=lr.find(r=>r.exercise===ex),pe=pr2.find(r=>r.exercise===ex);if(!le)return;
+    const wc2=pe?le.weight-pe.weight:null,rc=pe?le.reps-pe.reps:null;
+    let badge,summary='';
+    if(wc2===null)badge='<span class="badge beq">New</span>';
+    else if(wc2>0){badge=`<span class="badge bup">▲ +${wc2} lbs</span>`;summary='was '+pe.weight;}
+    else if(wc2<0){badge=`<span class="badge bdn">▼ ${wc2} lbs</span>`;summary='was '+pe.weight;}
+    else if(rc>0){badge=`<span class="badge bup">▲ +${rc} reps</span>`;summary='same weight';}
+    else if(rc<0){badge=`<span class="badge bdn">▼ ${rc} reps</span>`;summary='same weight';}
+    else badge='<span class="badge beq">= Same</span>';
+    const tr=document.createElement('tr');tr.innerHTML=`<td>${ex}</td><td>${le.sets}</td><td>${le.reps}</td><td>${le.weight} lbs</td><td style="color:var(--text2);font-size:11px">${summary}</td><td>${badge}</td>`;tbody.appendChild(tr);
+  });
+}
+
+function buildAerobic(){
+  const mg=document.getElementById('a-metrics');mg.innerHTML='';
+  const sessions=getSessions(aData);
+  if(!sessions.length){mg.innerHTML='<p class="no-data">No aerobic data found in your Excel file.</p>';return;}
+  const latest=sessions[sessions.length-1],prev=sessions.length>1?sessions[sessions.length-2]:null;
+  const lr=aData.filter(r=>r.date===latest),pr2=prev?aData.filter(r=>r.date===prev):[];
+  const ld=lr.reduce((s,r)=>s+r.duration,0),pd=pr2.reduce((s,r)=>s+r.duration,0);
+  const dd=pd?Math.round(((ld-pd)/pd)*100):null;
+  [mc('Sessions logged',sessions.length),mc('Latest duration',ld+' min',dd!==null?(dd>=0?'+'+dd+'%':dd+'%'):null,dd>=0?'up':'dn'),mc('Latest distance',lr.reduce((s,r)=>s+r.distance,0).toFixed(1)+' mi'),mc('Latest calories',lr.reduce((s,r)=>s+r.calories,0)+' kcal')].forEach(c=>mg.appendChild(c));
+  const allS=getSessions(aData);
+  if(aChart)aChart.destroy();
+  aChart=new Chart(document.getElementById('aChart'),{type:'line',data:{labels:allS,datasets:[{label:'Duration',data:allS.map(s=>aData.filter(r=>r.date===s).reduce((a,r)=>a+r.duration,0)),borderColor:'#1D9E75',backgroundColor:'rgba(29,158,117,0.07)',pointBackgroundColor:'#1D9E75',pointRadius:5,fill:true,tension:0.3,yAxisID:'y'},{label:'Distance',data:allS.map(s=>+aData.filter(r=>r.date===s).reduce((a,r)=>a+r.distance,0).toFixed(1)),borderColor:'#EF9F27',backgroundColor:'transparent',pointBackgroundColor:'#EF9F27',pointRadius:5,fill:false,tension:0.3,borderDash:[5,4],yAxisID:'y2'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:false,position:'left',title:{display:true,text:'Min',font:{size:10}}},y2:{beginAtZero:false,position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'Miles',font:{size:10}}},x:{ticks:{autoSkip:false,maxRotation:30}}}}});
+  const tbody=document.getElementById('a-tbody');tbody.innerHTML='';
+  [...new Set(aData.map(r=>r.activity))].forEach(act=>{
+    const la=aData.filter(r=>r.activity===act).sort((a,b)=>a.date>b.date?-1:1)[0];
+    const pa=aData.filter(r=>r.activity===act&&r.date<la.date).sort((a,b)=>a.date>b.date?-1:1)[0];
+    const pace=la.distance>0?(la.duration/la.distance).toFixed(1)+'/mi':'—';
+    const dd2=pa?(la.distance-pa.distance).toFixed(1):null;
+    let badge=dd2===null?'<span class="badge beq">New</span>':parseFloat(dd2)>0?`<span class="badge bup">▲ +${dd2} mi</span>`:parseFloat(dd2)<0?`<span class="badge bdn">▼ ${dd2} mi</span>`:'<span class="badge beq">= Same</span>';
+    const tr=document.createElement('tr');tr.innerHTML=`<td>${act}</td><td>${la.duration} min</td><td>${la.distance.toFixed(1)} mi</td><td>${pace}</td><td>${la.calories}</td><td>${badge}</td>`;tbody.appendChild(tr);
+  });
+}
+
+function getEst1RMHistory(lift){
+  const rows=rData.filter(r=>r.exercise===lift).sort((a,b)=>a.date>b.date?1:-1);
+  const byDate={};rows.forEach(r=>{const est=epley(r.weight,r.reps);if(!byDate[r.date]||est>byDate[r.date])byDate[r.date]=est;});
+  return Object.entries(byDate).map(([date,val])=>({date,val}));
+}
+
+function buildStrength(){
+  const mg=document.getElementById('s-metrics');mg.innerHTML='';
+  const allLifts=[...new Set(rData.map(r=>r.exercise))];
+  if(!allLifts.length){mg.innerHTML='<p class="no-data">No resistance data found for 1RM calculation.</p>';return;}
+  if(!selStrLift||!allLifts.includes(selStrLift))selStrLift=allLifts[0];
+  const fr=document.getElementById('s-filter-row');fr.innerHTML='';
+  allLifts.forEach(l=>{const btn=document.createElement('button');btn.className='filbtn'+(l===selStrLift?' active':'');btn.textContent=l;btn.onclick=()=>{selStrLift=l;buildStrength();};fr.appendChild(btn);});
+  let totalPRs=0;const latestEsts=[];
+  const tbody=document.getElementById('s-tbody');tbody.innerHTML='';
+  allLifts.forEach(lift=>{
+    const eh=getEst1RMHistory(lift),th=sData.filter(r=>r.lift===lift);
+    if(!eh.length)return;
+    const bestEst=Math.max(...eh.map(e=>e.val));
+    const bestTested=th.length?Math.max(...th.map(t=>t.tested1rm)):null;
+    const latestEst=eh[eh.length-1].val,prevEst=eh.length>1?eh[eh.length-2].val:null;
+    const delta=prevEst?latestEst-prevEst:null,pct=prevEst?Math.round(((latestEst-prevEst)/prevEst)*100):null;
+    latestEsts.push(latestEst);
+    const isNewPR=latestEst>=bestEst&&eh.length>1;if(isNewPR)totalPRs++;
+    let badge=delta===null?'<span class="badge beq">First entry</span>':isNewPR?'<span class="badge bpr">🏆 New PR</span>':delta>0?`<span class="badge bup">▲ +${pct}%</span>`:delta<0?`<span class="badge bdn">▼ ${pct}%</span>`:'<span class="badge beq">= Same</span>';
+    const tr=document.createElement('tr');tr.innerHTML=`<td>${lift}</td><td>${bestEst} lbs</td><td>${bestTested?bestTested+' lbs':'—'}</td><td>${latestEst} lbs</td><td>${badge}</td>`;tbody.appendChild(tr);
+  });
+  const avgEst=latestEsts.length?Math.round(latestEsts.reduce((a,b)=>a+b,0)/latestEsts.length):0;
+  [mc('Lifts tracked',allLifts.length),mc('1RM tests logged',sData.length),mc('Avg est. 1RM',avgEst+' lbs'),mc('PRs this period',totalPRs)].forEach(c=>mg.appendChild(c));
+  const eh=getEst1RMHistory(selStrLift),th=sData.filter(r=>r.lift===selStrLift);
+  const allDates=[...new Set([...eh.map(e=>e.date),...th.map(t=>t.date)])].sort();
+  const estMap=Object.fromEntries(eh.map(e=>[e.date,e.val]));
+  const testMap=Object.fromEntries(th.map(t=>[t.date,t.tested1rm]));
+  if(sChart)sChart.destroy();
+  sChart=new Chart(document.getElementById('sChart'),{type:'line',data:{labels:allDates,datasets:[{label:'Est. 1RM',data:allDates.map(d=>estMap[d]||null),borderColor:'#7F77DD',backgroundColor:'rgba(127,119,221,0.07)',pointBackgroundColor:'#7F77DD',pointRadius:5,fill:true,tension:0.3,spanGaps:true},{label:'Tested 1RM',data:allDates.map(d=>testMap[d]||null),borderColor:'#D4537E',backgroundColor:'rgba(212,83,126,0.1)',pointBackgroundColor:'#D4537E',pointRadius:7,pointStyle:'rectRot',fill:false,tension:0,spanGaps:false,showLine:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>ctx.parsed.y!==null?' '+ctx.parsed.y+' lbs':null}}},scales:{y:{beginAtZero:false,ticks:{callback:v=>v+' lbs'}},x:{ticks:{autoSkip:false,maxRotation:30}}}}});
+}
+
+function buildBodyweight(){
+  const mg=document.getElementById('bw-metrics');mg.innerHTML='';
+  const sorted=bwData.slice().sort((a,b)=>a.date>b.date?1:-1);
+  if(!sorted.length){mg.innerHTML='<p class="no-data">No body weight data found in your Excel file.</p>';return;}
+  const first=sorted[0].weight,last=sorted[sorted.length-1].weight;
+  const change=(last-first).toFixed(1),avg=(sorted.reduce((s,r)=>s+r.weight,0)/sorted.length).toFixed(1);
+  [mc('Current weight',last+' lbs'),mc('Starting weight',first+' lbs'),mc('Total change',(parseFloat(change)>0?'+':'')+change+' lbs'),mc('Average weight',avg+' lbs')].forEach(c=>mg.appendChild(c));
+  if(bwChart)bwChart.destroy();
+  bwChart=new Chart(document.getElementById('bwChart'),{type:'line',data:{labels:sorted.map(r=>r.date),datasets:[{label:'Body weight',data:sorted.map(r=>r.weight),borderColor:'#0F6E56',backgroundColor:'rgba(15,110,86,0.07)',pointBackgroundColor:'#0F6E56',pointRadius:4,fill:true,tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.y+' lbs'}}},scales:{y:{ticks:{callback:v=>v+' lbs'}},x:{ticks:{autoSkip:true,maxRotation:30}}}}});
+}
+
+checkMemory();
+</script>
+</body>
+</html>
+EOF
+echo "Done"
