@@ -1,21 +1,45 @@
-# Recreational-Training-Dashboard
+
+
+# Train Track — Progress Tracking Dashboard
+
+**Live Dashboard:** https://biokinstud.github.io/Recreational-Training-Dashboard/FitnessTracker.html
+
+---
+
+## Goal
 Goal: To **help** recreational individuals who are wanting to get into **tracking their progress** have an **easier time**. 
 
-**What you are given:**
-1. _"Train Track_ (Progress Tracking Application
-2. Your own personal excel sheet to write your data in.
+---
 
-**How to use:**
+## What You Get
+1. **Train Track** — a personal progress dashboard that updates every time you upload your data
+2. **Your own Excel training log** — a simple spreadsheet you fill in after each session
 
-1. Open the dashboard link
-2. Click "Download your Excel template" — gets the file instantly
-3. Fill in your data
-4. Go back to your dashboard. Click "Update data" → upload → done
+---
 
+## How To Use
+1. Open the dashboard link above
+2. Click **"Download your Excel template"** to get your personal log
+3. Fill in your workouts, cardio, and body weight in the yellow cells
+4. Come back to the dashboard, click **"Update data"**, upload your file — done
 
+**Every week after that:** add new rows to your Excel → upload → see your progress update instantly.
 
+---
 
-The best way to use this application is to stay true to yourself, be consistent and except change will take time. I want to cur
+## What The Dashboard Tracks
+- 💪 Resistance training — weight lifted, sets, reps, and progress over time
+- 🏃 Aerobic training — duration, distance, and pace
+- 🏆 Strength — estimated and tested 1 rep max
+- ⚖️ Body weight — trend over time
+- 📅 Weekly summary — plain English wins and losses each week
+- 📈 Progress — consistency calendar and personal records timeline
+- 📚 Resources — curated research articles explained in plain English
+
+---
+
+## A Note on Progress
+Stay honest with yourself, be consistent, and remember that change takes time. Small improvements every week add up to big results over months.
 
 **Consists:**
 Resistance_Log — 200 blank input rows
@@ -24,3 +48,6 @@ Strength_Log — 100 blank input rows
 Bodyweight_Log — 365 blank input rows
 
 If you run out of input space, continue adding below it will still track your data.
+---
+
+*Developed by BioKinStud*
