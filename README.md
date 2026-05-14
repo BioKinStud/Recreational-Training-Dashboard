@@ -7,7 +7,10 @@ Goal: To **help** recreational individuals who are wanting to get into **trackin
 
 **How to use:**
 
-1. 
+1. Open the dashboard link
+2. Click "Download your Excel template" — gets the file instantly
+3. Fill in your data
+4. Go back to your dashboard. Click "Update data" → upload → done
 
 
 
