@@ -1,5 +1,16 @@
 # Recreational-Training-Dashboard
-Alpha Dashboard: To help recreational individuals who are wanting to get into tracking their progress have an easier time. 
+Goal: To **help** recreational individuals who are wanting to get into **tracking their progress** have an **easier time**. 
+
+**What you are given:**
+1. _"Train Track_ (Progress Tracking Application
+2. Your own personal excel sheet to write your data in.
+
+**How to use:**
+
+1. 
+
+
+
 
 The best way to use this application is to stay true to yourself, be consistent and except change will take time. I want to cur
 
