@@ -32,9 +32,9 @@ Goal: To **help** recreational individuals who are wanting to get into **trackin
 - 🏃 Aerobic training — duration, distance, and pace
 - 🏆 Strength — estimated and tested 1 rep max
 - ⚖️ Body weight — trend over time
-- 📅 Weekly summary — plain English wins and losses each week
+- 📅 Weekly summary — If you're taking wins or losses
 - 📈 Progress — consistency calendar and personal records timeline
-- 📚 Resources — curated research articles explained in plain English
+- 📚 Resources — curated research articles explained easily.
 
 ---
 
