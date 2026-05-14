@@ -1,6 +1,8 @@
 # Recreational-Training-Dashboard
 Alpha Dashboard: To help recreational individuals who are wanting to get into tracking their progress have an easier time. 
 
+The best way to use this application is to stay true to yourself, be consistent and except change will take time. I want to cur
+
 **Consists:**
 Resistance_Log — 200 blank input rows
 Aerobic_Log — 200 blank input rows
