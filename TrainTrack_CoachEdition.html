@@ -474,7 +474,10 @@ function renderHWInputs(){
     c.style.gridTemplateColumns='1fr 1fr 1fr';
     c.innerHTML=`<input id="f-ft" type="number" min="3" max="8" placeholder="5 ft" value="${profile.heightFt||''}">
     <input id="f-in" type="number" min="0" max="11" placeholder="10 in" value="${profile.heightIn||''}">
-    <input id="f-wt" type="number" min="50" max="500" step="0.1" placeholder="175 lbs" value="${profile.weightLbs||''}">`;
+    <input id="f-wt" type="number" min="50" max="500" step="0.1" placeholder="175 lbs" value="${profile.weightLbs||''}">`; 
+    if (profile.bwSyncDate) {
+      c.innerHTML += `<div style="font-size:10px;color:var(--green);margin-top:3px;"><i class="ti ti-refresh" style="font-size:10px;vertical-align:-1px;"></i> Auto-updated from log (${profile.bwSyncDate})</div>`;
+    }
   } else {
     c.style.gridTemplateColumns='1fr 1fr';
     c.innerHTML=`<input id="f-cm" type="number" min="100" max="250" placeholder="178 cm" value="${profile.heightCm||''}">
@@ -697,6 +700,7 @@ function mc(label,value,delta,dir){
 // ── BUILD DASHBOARD ──────────────────────────────────────────
 function buildDashboard(){
   loadProfileIntoForm();
+  syncWeightFromLog();
   buildWeekly();buildProgress();buildResistance();buildCardio();buildStrength();buildBodyweight();buildResources();
   const all=[...getSessions(rData),...getSessions(aData),...getSessions(sData),...bwData.map(r=>r.date)].sort();
   if(all.length)document.getElementById('date-range').textContent='Data: '+all[0]+' → '+all[all.length-1];
@@ -1979,6 +1983,32 @@ function buildPOChart() {
   </div>`;
 }
 
+
+// ── AUTO WEIGHT SYNC ─────────────────────────────────────────────
+function syncWeightFromLog() {
+  if (!bwData || !bwData.length) return;
+  const latest = bwData.slice().sort((a,b) => a.date > b.date ? -1 : 1)[0];
+  if (!latest || !latest.weight) return;
+
+  // Only update if the log has a newer entry than what is stored
+  const logDate = latest.date;
+  const storedDate = profile.bwSyncDate || '';
+
+  if (logDate >= storedDate) {
+    // Update profile weight fields
+    if (profile.weightUnit === 'kg') {
+      profile.weightKg = latest.weight;
+      profile.weightLbs = Math.round(latest.weight * 2.2046);
+    } else {
+      profile.weightLbs = latest.weight;
+      profile.weightKg = (+latest.weight / 2.2046).toFixed(1);
+    }
+    profile.bwSyncDate = logDate;
+    saveAll();
+    renderProfileDisplay();
+  }
+}
+
 // ── CLIENT MANAGER ────────────────────────────────────────────────
 const STORAGE_KEY = STORE; // alias for client manager
 const CLIENT_INDEX_KEY = 'trainTrack_clientIndex';
@@ -2280,7 +2310,7 @@ function buildSVGLine(values, width, height, color) {
 
 function printWeeklyReport() {
   closeReports();
-  const name = profile.name || 'Client';
+  const name = ((profile.fname||'')+' '+(profile.lname||'')).trim() || 'Client';
   const date = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
 
   const allDates = [...new Set(rData.map(r=>r.date))].sort();
@@ -2372,7 +2402,8 @@ function printWeeklyReport() {
   const profParts = [];
   if (profile.age) profParts.push('Age: ' + profile.age);
   if (profile.sex) profParts.push(profile.sex);
-  if (profile.weight) profParts.push(profile.weight + ' ' + (profile.weightUnit||'lbs'));
+  const _pw = profile.weightLbs || profile.weightKg;
+  if (_pw) profParts.push(_pw + ' ' + (profile.weightLbs ? 'lbs' : 'kg'));
   if (profile.goal) profParts.push('Goal: ' + profile.goal);
   const profLine = profParts.join(' &nbsp;|&nbsp; ');
 
@@ -2421,7 +2452,7 @@ function printWeeklyReport() {
 
 function printFullReport() {
   closeReports();
-  const name = profile.name || 'Client';
+  const name = ((profile.fname||'')+' '+(profile.lname||'')).trim() || 'Client';
   const date = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
   const allRDates = [...new Set(rData.map(r=>r.date))].sort();
   const firstDate = allRDates[0] || '';
@@ -2492,7 +2523,8 @@ function printFullReport() {
   const profPartsF = [];
   if (profile.age) profPartsF.push('Age: ' + profile.age);
   if (profile.sex) profPartsF.push(profile.sex);
-  if (profile.weight) profPartsF.push(profile.weight + ' ' + (profile.weightUnit||'lbs'));
+  const _pwF = profile.weightLbs || profile.weightKg;
+  if (_pwF) profPartsF.push(_pwF + ' ' + (profile.weightLbs ? 'lbs' : 'kg'));
   if (profile.goal) profPartsF.push('Goal: ' + profile.goal);
   const profLineF = profPartsF.join(' &nbsp;|&nbsp; ');
 
@@ -2647,9 +2679,12 @@ function openMets() {
 
   // Set bodyweight note from profile
   const bwNote = document.getElementById('mets-bw-note');
-  const bwKg = profile.weight ? (profile.weightUnit === 'kg' ? profile.weight : (profile.weight * 0.453592)) : null;
+  const _mw = profile.weightLbs || profile.weightKg;
+  const _mUnit = profile.weightLbs ? 'lbs' : profile.weightKg ? 'kg' : '';
+  const bwKg = profile.weightLbs ? (+profile.weightLbs * 0.453592) : profile.weightKg ? +profile.weightKg : null;
   if (bwKg) {
-    bwNote.textContent = 'Using your profile weight of ' + profile.weight + ' ' + (profile.weightUnit || 'lbs') + ' (' + bwKg.toFixed(1) + ' kg) to calculate calories per hour.';
+    const syncNote = profile.bwSyncDate ? ' (auto-updated ' + profile.bwSyncDate + ')' : '';
+    bwNote.textContent = 'Using your profile weight of ' + _mw + ' ' + _mUnit + ' (' + bwKg.toFixed(1) + ' kg) to calculate calories per hour.' + syncNote;
   } else {
     bwNote.textContent = 'Add your weight in the Profile tab to see personalised calorie estimates.';
   }
@@ -2689,7 +2724,7 @@ function closeMets() {
 
 function filterMets() {
   const query = (document.getElementById('mets-search')?.value || '').toLowerCase().trim();
-  const bwKg = profile.weight ? (profile.weightUnit === 'kg' ? profile.weight : (profile.weight * 0.453592)) : null;
+  const bwKg = profile.weightLbs ? (+profile.weightLbs * 0.453592) : profile.weightKg ? +profile.weightKg : null;
 
   const filtered = METS_DATA.filter(m => {
     const matchCat = metsCatFilter === 'All' || m.category === metsCatFilter;
