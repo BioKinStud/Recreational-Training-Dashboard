@@ -2,7 +2,7 @@
 
 # Train Track — Progress Tracking Dashboard
 
-**Live Dashboard:** https://biokinstud.github.io/TrainTrackIndividual/TrainTrack.html
+**Live Dashboard:** [https://biokinstud.github.io/TrainTrackIndividual/TrainTrack.html](https://biokinstud.github.io/Recreational-Training-Dashboard/TrainTrackIndividual.html)
 
 ---
 
