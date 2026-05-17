@@ -1,4 +1,4 @@
-[README (2).md](https://github.com/user-attachments/files/27867276/README.2.md)
+
 # Train Track — Fitness Progress Dashboard
 
 > A free, browser-based fitness tracking dashboard. No accounts, no subscriptions, no data sent anywhere. Everything stays on your device.
