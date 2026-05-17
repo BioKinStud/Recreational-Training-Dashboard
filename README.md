@@ -29,7 +29,7 @@ Goal: To **help** recreational individuals who are wanting to get into **trackin
 
 ## What The Dashboard Tracks
 - 💪 Resistance training — weight lifted, sets, reps, and progress over time
-- 🏃 Aerobic training — duration, distance, and pace
+- 🏃 Cardio training — duration, distance, and pace
 - 🏆 Strength — estimated and tested 1 rep max
 - ⚖️ Body weight — trend over time
 - 📅 Weekly summary — If you're taking wins or losses
