@@ -50,4 +50,4 @@ Bodyweight_Log — 365 blank input rows
 If you run out of input space, continue adding below it will still track your data.
 ---
 
-*Developed by BioKinStud*
+*Developed by BioKinStud and Claude*
