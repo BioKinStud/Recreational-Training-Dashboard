@@ -108,4 +108,4 @@ No data is ever sent anywhere. There is no server, no database, no accounts, no 
 
 ---
 
-*Train Track Alpha - Powered by BiomechanicsIQ and Claude*
+
